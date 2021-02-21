@@ -1,29 +1,76 @@
 import Vue from 'vue'
-import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
+import Router from 'vue-router'
+import store from '@/store/index'
+import { getToken, removeToken, removeUserName } from '@/utils/user'
 
-Vue.use(VueRouter)
+import Login from '@/views/login/Login'
+import Register from '@/views/login/Register'
 
-const routes = [
-  {
-    path: '/',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
-  }
-]
+Vue.use(Router)
 
-const router = new VueRouter({
+const router = new Router({
   mode: 'history',
-  base: process.env.BASE_URL,
-  routes
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: () => import('@/views/Home')
+    },
+    // {
+    //   path: '/',
+    //   redirect: '/dashbord'
+    // },
+    {
+      path: '/login',
+      name: 'login',
+      component: Login
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: Register
+    },
+    // {
+    //   path: '/mdedit/:id',
+    //   name: 'mdedit',
+    //   component: MdEdit
+    // },
+    {
+      path: '/dashbord',
+      name: 'dashbord',
+      component: () => import('@/views/tools/'),
+      children: [
+        { path: '/manageartilce', name: 'manageartilce', component: () => import('@/views/tools/index') }
+      ]
+    },
+    {
+      path: '*',
+      name: '404',
+      component: () => import('@/components/404')
+    }
+  ]
+})
+
+const whiteRouter = ['/', '/login', '/register', '/dashbord'] // 路由白名单
+
+router.beforeEach((to, from, next) => {
+  if (getToken()) {
+    if (to.path === '/login') {
+      removeToken()
+      removeUserName()
+      store.commit('user/SET_TOKEN', '')
+      store.commit('Suser/ET_USERNAME', '')
+      next()
+    } else {
+      next()
+    }
+  } else {
+    if (whiteRouter.indexOf(to.path) !== -1) {
+      next()
+    } else {
+      next('/login')
+    }
+  }
 })
 
 export default router
